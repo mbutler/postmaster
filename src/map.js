@@ -31,16 +31,16 @@ const Hex = Honeycomb.extendHex({
     highlight() {
         if (this.selected === true) {
             this.selected = true
-            this.draw
-                .fill({ opacity: 1, color: 'aquamarine' })
+            this.draw.fill({ opacity: 1, color: 'aquamarine' })
                 
         } else {
             this.selected = false
-            this.draw
-                .fill({ opacity: 0, color: 'none' })
+            this.draw.fill({ opacity: 0, color: 'none' })
         }
     }
 })
+
+
 
 const Grid = Honeycomb.defineGrid(Hex)
 
@@ -52,12 +52,18 @@ const grid = Grid.rectangle({
     }
 })
 
+document.addEventListener('click', ({ offsetX, offsetY }) => {
+    const hexCoordinates = Grid.pointToHex(offsetX, offsetY)
+    let hex = grid.get(hexCoordinates)
+    hex.highlight()
+    console.log(hex)    
+})
+
 function randomColor(resources) {
     let social = resources.t
     let val = social.toString()
     let greyScale = {"0": "#FFFFFF", "1": "#E8E8E8", "2": "#D0D0D0", "3": "#B0B0B0", "4": "#808080", "5": "#909090", "6": "#686868", "7": "#383838", "8": "#000000" }
     let color = greyScale[val]
-    console.log(color)
     return color
     
     // return '#'+(Math.random() * 0xFFFFFF << 0).toString(16).padStart(6, '0')
@@ -70,5 +76,3 @@ function generateResources(resources) {
     let combat = Math.floor(Math.random() * 9)
     return {t: travel, e: exploration, s: social, c: combat}
 }
-
-console.log(grid[0])
