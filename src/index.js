@@ -31,6 +31,23 @@ export function hexParse(hex) {
         return hexChallenge    
 }
 
+export function isValidHexProperty(hex) {
+    let hexList = hex.match(/.{1,2}/g)
+    let isValid = true
+    hexList.forEach(prop => {
+        const key = prop.charAt(0)
+        const val = _.toNumber(prop.charAt(1))
+        if (key.length !== 1 && key.match(/[^a-zA-Z]/)) {
+            isValid = false
+        }
+
+        if (Number.isInteger(val) === false) {
+            isValid = false
+        }
+    })
+    return isValid
+}
+
 export function partyBonus(party) {
     let combat = 0, exploration = 0, diplomacy = 0, travel = 0
     party.forEach(member => {

@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { partyBonus, hexParse } from '../src/index'
+import { partyBonus, hexParse, isValidHexProperty } from '../src/index'
 
 const party1 = ['Warrior', 'Guide', 'Merchant', 'Sorcerer']
 const party2 = ['Warrior', 'Warrior']
@@ -8,6 +8,8 @@ const party4 = []
 const hexCode1 = "F3G6B5X0D9"
 const hexCode2 = "F3G6B5"
 const hexCode3 = "F3G6B5X0D9E5"
+const hexCode4 = "FRG6B5X0D9"
+const hexCode5 = "f3G6B5X0D9"
 
 describe('Party Base Bonus', () => {
     it('outputs the correct base effort for a 4-member party of each class', () => {
@@ -33,5 +35,14 @@ describe('Hex Parser', () => {
     })
     it('throws an error if hex code is too long', () => {
         expect(() => hexParse(hexCode3)).to.throw(Error)
+    })
+    it('checks if valid hex properties are valid', () => {
+        expect(isValidHexProperty(hexCode1)).to.equal(true)
+    })
+    it('checks if hex properties with bad properties are valid', () => {
+        expect(isValidHexProperty(hexCode4)).to.equal(false)
+    })
+    it('checks if hex properties with lower case properties are valid', () => {
+        expect(isValidHexProperty(hexCode5)).to.equal(true)
     })
 })
