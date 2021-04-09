@@ -3,7 +3,7 @@ let _ = require('lodash')
 
 export function hexParse(hex) {
     let hexList = hex.match(/.{1,2}/g)
-    if (hexList.length != 5) {
+    if (isValidHexProperty(hex) === false) {
         throw Error('Invalid hex code.')
     }
     let hexChallenge = {
@@ -28,12 +28,15 @@ export function hexParse(hex) {
             "challenge": _.toNumber(hexList[4].charAt(1))
         }
     }
-        return hexChallenge    
+    return hexChallenge
 }
 
 export function isValidHexProperty(hex) {
     let hexList = hex.match(/.{1,2}/g)
     let isValid = true
+    if (hexList.length !== 5) {
+        isValid = false
+    }
     hexList.forEach(prop => {
         const key = prop.charAt(0)
         const val = _.toNumber(prop.charAt(1))
@@ -49,7 +52,10 @@ export function isValidHexProperty(hex) {
 }
 
 export function partyBonus(party) {
-    let combat = 0, exploration = 0, diplomacy = 0, travel = 0
+    let combat = 0,
+        exploration = 0,
+        diplomacy = 0,
+        travel = 0
     party.forEach(member => {
         if (member == 'Warrior') {
             combat += 2
@@ -79,8 +85,5 @@ export function partyBonus(party) {
         "diplomacy": diplomacy,
         "travel": travel
     }
-
     return baseEffort
 }
-
-
