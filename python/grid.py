@@ -138,24 +138,10 @@ class Grid:
         return results
     
     def hex_range_intersection(self, center_a, range_a, center_b, range_b):
-        # Calculate the intersection of the constraints
-        x1 = max(center_a['x'] - range_a, center_b['x'] - range_b)
-        x2 = min(center_a['x'] + range_a, center_b['x'] + range_b)
+        a_list = self.hexes_in_range(center_a, range_a)
+        b_list = self.hexes_in_range(center_b, range_b)
+        return [hexagon for hexagon in a_list if hexagon in b_list]
 
-        y1 = max(center_a['y'] - range_a, center_b['y'] - range_b)
-        y2 = min(center_a['y'] + range_a, center_b['y'] + range_b)
-
-        z1 = max(center_a['z'] - range_a, center_b['z'] - range_b)
-        z2 = min(center_a['z'] + range_a, center_b['z'] + range_b)
-
-        results = []
-        for dx in range(x1, x2+1):
-            for dy in range(max(y1, -dx-z2), min(y2, -dx-z1)+1):
-                dz = -dx-dy
-                if x1 <= dx <= x2 and y1 <= dy <= y2 and z1 <= dz <= z2:
-                    results.append({'x': dx, 'y': dy, 'z': dz})
-
-        return results
     
     def flood_fill(self, center_coords, N):
         """Get a list of hexes within a range of a center hex that are not obstacles."""
