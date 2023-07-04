@@ -123,7 +123,7 @@ class Grid:
 
         return {'x': rx, 'y': ry, 'z': rz}
     
-    def draw_line(self, start_coords, end_coords):
+    def hexes_in_path(self, start_coords, end_coords):
         """Get a list of hexes in a line between two hexes."""
         N = self.cube_distance(start_coords, end_coords)
         results = []
@@ -141,8 +141,7 @@ class Grid:
         a_list = self.hexes_in_range(center_a, range_a)
         b_list = self.hexes_in_range(center_b, range_b)
         return [hexagon for hexagon in a_list if hexagon in b_list]
-
-    
+  
     def flood_fill(self, center_coords, N):
         """Get a list of hexes within a range of a center hex that are not obstacles."""
         fringes = []
@@ -172,6 +171,76 @@ class Grid:
                     fringes[k].append(neighbor_coords)
 
         return fringes
+    
+    def update_properties_from_list(self, hex_list):
+        """Updates the properties of each hex in the grid from a list of hexagon objects."""
+        for hex_obj in hex_list:
+            # Ensure the object has the required keys
+            if 'coordinates' in hex_obj and 'properties' in hex_obj:
+                self.set_properties(hex_obj['coordinates'], hex_obj['properties'])
+            else:
+                raise ValueError("Hexagon object must contain 'coordinates' and 'properties' keys.")
+        return self.grid
+    
+    def direction_to_index(self, direction_str, orientation='flat'):
+        print(direction_str, orientation)
+        """Convert a string direction to its corresponding index in the movement table."""
+        # Define mapping for flat orientation
+        if orientation == 'flat':
+            direction_mapping = {
+                'NE': 0,
+                'SE': 1,
+                'S': 2,
+                'SW': 3,
+                'NW': 4,
+                'N': 5
+            }
+        elif orientation == 'pointy':
+            direction_mapping = {
+                'NE': 0,
+                'E': 1,
+                'SE': 2,
+                'SW': 3,
+                'W': 4,
+                'NW': 5
+            }
+        else:
+            raise ValueError('Invalid orientation. Choose either "flat" or "pointy".')
+        
+        if direction_str not in direction_mapping:
+            raise ValueError(f"Invalid direction. Choose from {list(direction_mapping.keys())}.")
+        
+        return direction_mapping[direction_str]
+
+    def index_to_direction(self, direction_index, orientation='flat'):
+        """Convert an index in the movement table to its corresponding string direction."""
+        # Define mapping for flat orientation
+        if orientation == 'flat':
+            index_mapping = {
+                0: 'NE',
+                1: 'SE',
+                2: 'S',
+                3: 'SW',
+                4: 'NW',
+                5: 'N'
+            }
+        elif orientation == 'pointy':
+            index_mapping = {
+                0: 'NE',
+                1: 'E',
+                2: 'SE',
+                3: 'SW',
+                4: 'W',
+                5: 'NW'
+            }
+        else:
+            raise ValueError('Invalid orientation. Choose either "flat" or "pointy".')
+
+        if direction_index not in index_mapping:
+            raise ValueError(f"Invalid index. Choose from {list(index_mapping.keys())}.")
+
+        return index_mapping[direction_index]
+
 
     def to_json(self):
         return json.dumps(self.grid)
