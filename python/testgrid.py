@@ -4,7 +4,11 @@ import time
 import unittest
 
 # create a grid with 10 columns and 10 rows
-grid = Grid(100, 100)
+grid = Grid(10, 10)
+jsongrid = grid.to_json()
+with open('grid.json', 'w') as f:
+     f.write(jsongrid)
+
 
 # test set_properties
 print('set_properties')
@@ -123,7 +127,7 @@ print("""
 """)
 
 # use set_properties to set 'obstacle' to True for a hexagon
-grid.set_properties({'x': 0, 'y': 0, 'z': 0}, {'obstacle': True})
+grid.draw_grid(20)
 
 def dict_lists_equal(list1, list2):
     """Helper function to test if two lists of dictionaries are equal"""

@@ -3,8 +3,9 @@
 
 import math
 import json
-import heapq
-from queue import PriorityQueue
+from PIL import Image, ImageDraw
+import math
+
 
 def lerp(a, b, t):
     """Linear interpolation."""
@@ -39,19 +40,19 @@ class Grid:
             for y in range(max(-self.y_size, -x - self.y_size), min(self.y_size, -x + self.y_size) + 1):
                 z = -x-y
                 grid.append({
-                    'coordinates': {
+                    'c': {
                         'x': x,
                         'y': y,
                         'z': z
                     },
-                    'properties': {}
+                    'p': {}
                 })
         return grid
     
     def get_hexagon(self, coords):
         """Get the entire hexagon data given its coordinates."""
         for hexagon in self.grid:
-            if hexagon['coordinates'] == coords:
+            if hexagon['c'] == coords:
                 return hexagon
         return None
     
@@ -75,18 +76,18 @@ class Grid:
     def get_properties(self, coordinates, prop=None):
         """Get the properties of a hexagon."""
         for hexagon in self.grid:
-            if hexagon['coordinates'] == coordinates:
+            if hexagon['c'] == coordinates:
                 if prop:
-                    return {k: hexagon['properties'].get(k, None) for k in prop}
+                    return {k: hexagon['p'].get(k, None) for k in prop}
                 else:
-                    return hexagon['properties']
+                    return hexagon['p']
         return None
 
     def set_properties(self, coordinates, prop):
         """Set the properties of a hexagon."""
         for hexagon in self.grid:
-            if hexagon['coordinates'] == coordinates:
-                hexagon['properties'].update(prop)
+            if hexagon['c'] == coordinates:
+                hexagon['p'].update(prop)
                 return True
         return False
     
@@ -176,10 +177,10 @@ class Grid:
         """Updates the properties of each hex in the grid from a list of hexagon objects."""
         for hex_obj in hex_list:
             # Ensure the object has the required keys
-            if 'coordinates' in hex_obj and 'properties' in hex_obj:
-                self.set_properties(hex_obj['coordinates'], hex_obj['properties'])
+            if 'c' in hex_obj and 'p' in hex_obj:
+                self.set_properties(hex_obj['c'], hex_obj['p'])
             else:
-                raise ValueError("Hexagon object must contain 'coordinates' and 'properties' keys.")
+                raise ValueError("Hexagon object must contain 'c' and 'p' keys.")
         return self.grid
     
     def direction_to_index(self, direction_str, orientation='flat'):
@@ -240,6 +241,46 @@ class Grid:
             raise ValueError(f"Invalid index. Choose from {list(index_mapping.keys())}.")
 
         return index_mapping[direction_index]
+    
+    def flat_hex_corner(self, center, size, i):
+        angle_deg = 60 * i
+        angle_rad = math.pi / 180 * angle_deg
+        return {'x': center['x'] + size * math.cos(angle_rad),
+                'y': center['y'] + size * math.sin(angle_rad)}
+
+    def hex_to_pixel(self, hex_coords, size, grid_size, orientation='flat'):
+        """Convert a hexagon's cube coordinates to pixel coordinates."""
+        x, y, z = hex_coords['x'], hex_coords['y'], hex_coords['z']
+        if orientation == 'flat':
+            px = size * (3/2 * x)
+            py = size * (math.sqrt(3) * (y + x / 2))
+        elif orientation == 'pointy':
+            px = size * (math.sqrt(3) * (x + y / 2))
+            py = size * (3/2 * y)
+        else:
+            raise ValueError('Invalid orientation. Choose either "flat" or "pointy".')
+
+        # Adjust coordinates for image center
+        center_x = size * grid_size
+        center_y = size * grid_size
+
+        return {'x': px + center_x, 'y': py + center_y}
+
+
+    def draw_grid(self, size, output_file="hexagons.png"):
+        print('drawing grid')
+        grid_size = len(self.grid)
+        img_size = (int(grid_size * size * 2), int(grid_size * size * 2))
+        img = Image.new('RGB', img_size)
+        draw = ImageDraw.Draw(img)
+
+        for hex_coords in self.grid:
+            pixel_coords = self.hex_to_pixel(hex_coords['c'], size, grid_size, "flat")
+            corners = [self.flat_hex_corner(pixel_coords, size, i) for i in range(6)]
+            corners = [(corner['x'], corner['y']) for corner in corners]
+            draw.polygon(corners, outline='white')
+
+        img.save(output_file)
 
 
     def to_json(self):
