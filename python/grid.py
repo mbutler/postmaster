@@ -28,33 +28,28 @@ def movement_table(orientation='flat'):
 
 
 class Grid:
-    def __init__(self, x_size, y_size):
-        self.x_size = x_size
-        self.y_size = y_size
+    def __init__(self, size):
+        self.size = size
         self.grid = self.create_hex_grid()
 
     def create_hex_grid(self):
         """Create a hexagon grid."""
-        grid = []
-        for x in range(-self.x_size, self.x_size + 1):
-            for y in range(max(-self.y_size, -x - self.y_size), min(self.y_size, -x + self.y_size) + 1):
+        grid = {}
+        size = self.size
+
+        for x in range(-size, size + 1):
+            for y in range(max(-size, -x - size), min(size, -x + size) + 1):
                 z = -x-y
-                grid.append({
-                    'c': {
-                        'x': x,
-                        'y': y,
-                        'z': z
-                    },
-                    'p': {}
-                })
+                coord_tuple = (x, y, z)
+                grid[coord_tuple] = {}
         return grid
+
     
     def get_hexagon(self, coords):
-        """Get the entire hexagon data given its coordinates."""
-        for hexagon in self.grid:
-            if hexagon['c'] == coords:
-                return hexagon
-        return None
+        """Retrieve a hexagon from the grid using its coordinates."""
+        x, y, z = coords['x'], coords['y'], coords['z']
+        return self.grid.get((x, y, z), None)
+
     
     def hexes_in_range(self, center_coords, N, exclude_center=False):
         """Get a list of hexes within a range of a center hex. Can exclude the center hex."""
@@ -75,21 +70,27 @@ class Grid:
 
     def get_properties(self, coordinates, prop=None):
         """Get the properties of a hexagon."""
-        for hexagon in self.grid:
-            if hexagon['c'] == coordinates:
-                if prop:
-                    return {k: hexagon['p'].get(k, None) for k in prop}
-                else:
-                    return hexagon['p']
-        return None
+        coordinate_tuple = (coordinates['x'], coordinates['y'], coordinates['z'])
+
+        if coordinate_tuple in self.grid:
+            hexagon = self.grid[coordinate_tuple]
+            if prop:
+                return {k: hexagon.get(k, None) for k in prop}
+            else:
+                return hexagon
+        else:
+            return None
+
 
     def set_properties(self, coordinates, prop):
         """Set the properties of a hexagon."""
-        for hexagon in self.grid:
-            if hexagon['c'] == coordinates:
-                hexagon['p'].update(prop)
-                return True
-        return False
+        coordinate_tuple = (coordinates['x'], coordinates['y'], coordinates['z'])
+        
+        if coordinate_tuple in self.grid:
+            self.grid[coordinate_tuple].update(prop)
+            return True
+        else:
+            return False
     
     def get_relative_coordinates(self, start_coords, direction, N):
         """Get the coordinates of a hexagon relative to another hexagon."""
@@ -177,11 +178,13 @@ class Grid:
         """Updates the properties of each hex in the grid from a list of hexagon objects."""
         for hex_obj in hex_list:
             # Ensure the object has the required keys
-            if 'c' in hex_obj and 'p' in hex_obj:
-                self.set_properties(hex_obj['c'], hex_obj['p'])
+            if 'coords' in hex_obj and 'props' in hex_obj:
+                coords_tuple = tuple(hex_obj['coords'].values())  # Convert coordinates to a tuple
+                self.set_properties(coords_tuple, hex_obj['props'])
             else:
-                raise ValueError("Hexagon object must contain 'c' and 'p' keys.")
+                raise ValueError("Hexagon object must contain 'coords' and 'props' keys.")
         return self.grid
+
     
     def direction_to_index(self, direction_str, orientation='flat'):
         print(direction_str, orientation)
@@ -248,9 +251,9 @@ class Grid:
         return {'x': center['x'] + size * math.cos(angle_rad),
                 'y': center['y'] + size * math.sin(angle_rad)}
 
-    def hex_to_pixel(self, hex_coords, size, grid_size, orientation='flat'):
+    def hex_to_pixel(self, hex_coords_tuple, size, grid_size, orientation='flat'):
         """Convert a hexagon's cube coordinates to pixel coordinates."""
-        x, y, z = hex_coords['x'], hex_coords['y'], hex_coords['z']
+        x, y, z = hex_coords_tuple  # Unpack tuple
         if orientation == 'flat':
             px = size * (3/2 * x)
             py = size * (math.sqrt(3) * (y + x / 2))
@@ -267,21 +270,48 @@ class Grid:
         return {'x': px + center_x, 'y': py + center_y}
 
 
+
     def draw_grid(self, size, output_file="hexagons.png"):
+        """Draw the hexagonal grid and save it to a file."""
         print('drawing grid')
-        grid_size = len(self.grid)
-        img_size = (int(grid_size * size * 2), int(grid_size * size * 2))
+
+        # Calculate the minimum and maximum x, y coordinates in pixels
+        min_x = min_y = float('inf')
+        max_x = max_y = float('-inf')
+
+        for hex_coords_tuple in self.grid.keys():
+            pixel_coords = self.hex_to_pixel(hex_coords_tuple, size, len(self.grid), "flat")
+            min_x = min(min_x, pixel_coords['x'])
+            min_y = min(min_y, pixel_coords['y'])
+            max_x = max(max_x, pixel_coords['x'])
+            max_y = max(max_y, pixel_coords['y'])
+
+        # Create a margin around the grid for aesthetics
+        margin = size
+
+        # Set the image size based on the minimum and maximum coordinates
+        img_size = (int(max_x - min_x + 2*margin), int(max_y - min_y + 2*margin))
         img = Image.new('RGB', img_size)
+
         draw = ImageDraw.Draw(img)
 
-        for hex_coords in self.grid:
-            pixel_coords = self.hex_to_pixel(hex_coords['c'], size, grid_size, "flat")
+        for hex_coords_tuple in self.grid.keys():
+            pixel_coords = self.hex_to_pixel(hex_coords_tuple, size, len(self.grid), "flat")
+
+            # Adjust for the new image origin and margin
+            pixel_coords['x'] -= min_x - margin
+            pixel_coords['y'] -= min_y - margin
+
             corners = [self.flat_hex_corner(pixel_coords, size, i) for i in range(6)]
             corners = [(corner['x'], corner['y']) for corner in corners]
             draw.polygon(corners, outline='white')
 
         img.save(output_file)
 
-
     def to_json(self):
-        return json.dumps(self.grid)
+        json_safe_dict = {str(k): v for k, v in self.grid.items()}
+        return json.dumps(json_safe_dict)
+
+    def from_json(self, json_str):
+        json_safe_dict = json.loads(json_str)
+        self.grid = {tuple(map(int, k.strip('()').split(','))): v for k, v in json_safe_dict.items()}

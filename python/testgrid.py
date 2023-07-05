@@ -3,12 +3,16 @@ from grid import Grid
 import time
 import unittest
 
-# create a grid with 10 columns and 10 rows
-grid = Grid(10, 10)
-jsongrid = grid.to_json()
-with open('grid.json', 'w') as f:
-     f.write(jsongrid)
+"""
+We assume we are generating Grid, a 6-mile hex: http://steamtunnel.blogspot.com/2009/12/in-praise-of-6-mile-hex.html
+A 6-mile hex has a radius of 3 miles. 3 miles is 15,840 feet. A Grid hex is 31,680 feet across. Grid hex is 20,371.2 acres.
+A Grid size of 11 (Grid(11)) is 23 sub-hexes wide with a side length of 12 sub-hexes.
+397 total sub-hexes in the larger Grid hex. 31.82 sq miles in the larger Grid hex.
+Each sub-hex is 1,377 feet, or 275 squares, wide. 803 feet per sub-hex side. 51.3 acres per sub-hex.
+"""
 
+# create a grid with 10 columns and 10 rows
+grid = Grid(11)
 
 # test set_properties
 print('set_properties')
@@ -22,7 +26,7 @@ print("""
 
 # test get_properties
 print('get_properties')
-print(grid.get_properties({'x': 0, 'y': 0, 'z': 0}, ['obstacle']))
+print(grid.get_properties(({'x': 0, 'y': 0, 'z': 0}), ['obstacle']))
 
 print("""
 
@@ -127,7 +131,10 @@ print("""
 """)
 
 # use set_properties to set 'obstacle' to True for a hexagon
-grid.draw_grid(20)
+jsongrid = grid.to_json()
+with open('grid.json', 'w') as f:
+     f.write(jsongrid)
+grid.draw_grid(25)
 
 def dict_lists_equal(list1, list2):
     """Helper function to test if two lists of dictionaries are equal"""
@@ -283,7 +290,6 @@ class TestHexesInPath(unittest.TestCase):
         end_coords = {'x': 2, 'y': -2, 'z': 0}
         self.assertEqual(grid.hexes_in_path(start_coords, end_coords), [{'x': 0, 'y': 0, 'z': 0}, {'x': 1, 'y': -1, 'z': 0}, {'x': 2, 'y': -2, 'z': 0}])
         print('test_hexes_in_path_multiple_intersections passed')
-
 
 if __name__ == "__main__":
     unittest.main()
