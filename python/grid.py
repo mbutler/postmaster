@@ -4,7 +4,6 @@
 import math
 import json
 from PIL import Image, ImageDraw
-import math
 
 
 def lerp(a, b, t):
@@ -40,8 +39,8 @@ class Grid:
         for x in range(-size, size + 1):
             for y in range(max(-size, -x - size), min(size, -x + size) + 1):
                 z = -x-y
-                coord_tuple = (x, y, z)
-                grid[coord_tuple] = {}
+                coords = (x, y, z)
+                grid[coords] = {}
         return grid
 
     
@@ -70,10 +69,10 @@ class Grid:
 
     def get_properties(self, coordinates, prop=None):
         """Get the properties of a hexagon."""
-        coordinate_tuple = (coordinates['x'], coordinates['y'], coordinates['z'])
+        coords = (coordinates['x'], coordinates['y'], coordinates['z'])
 
-        if coordinate_tuple in self.grid:
-            hexagon = self.grid[coordinate_tuple]
+        if coords in self.grid:
+            hexagon = self.grid[coords]
             if prop:
                 return {k: hexagon.get(k, None) for k in prop}
             else:
@@ -84,10 +83,10 @@ class Grid:
 
     def set_properties(self, coordinates, prop):
         """Set the properties of a hexagon."""
-        coordinate_tuple = (coordinates['x'], coordinates['y'], coordinates['z'])
+        coords = (coordinates['x'], coordinates['y'], coordinates['z'])
         
-        if coordinate_tuple in self.grid:
-            self.grid[coordinate_tuple].update(prop)
+        if coords in self.grid:
+            self.grid[coords].update(prop)
             return True
         else:
             return False
@@ -179,8 +178,8 @@ class Grid:
         for hex_obj in hex_list:
             # Ensure the object has the required keys
             if 'coords' in hex_obj and 'props' in hex_obj:
-                coords_tuple = tuple(hex_obj['coords'].values())  # Convert coordinates to a tuple
-                self.set_properties(coords_tuple, hex_obj['props'])
+                coords = tuple(hex_obj['coords'].values())  # Convert coordinates to a tuple
+                self.set_properties(coords, hex_obj['props'])
             else:
                 raise ValueError("Hexagon object must contain 'coords' and 'props' keys.")
         return self.grid
@@ -251,9 +250,9 @@ class Grid:
         return {'x': center['x'] + size * math.cos(angle_rad),
                 'y': center['y'] + size * math.sin(angle_rad)}
 
-    def hex_to_pixel(self, hex_coords_tuple, size, grid_size, orientation='flat'):
+    def hex_to_pixel(self, coords, size, grid_size, orientation='flat'):
         """Convert a hexagon's cube coordinates to pixel coordinates."""
-        x, y, z = hex_coords_tuple  # Unpack tuple
+        x, y, z = coords  # Unpack tuple
         if orientation == 'flat':
             px = size * (3/2 * x)
             py = size * (math.sqrt(3) * (y + x / 2))
@@ -279,8 +278,8 @@ class Grid:
         min_x = min_y = float('inf')
         max_x = max_y = float('-inf')
 
-        for hex_coords_tuple in self.grid.keys():
-            pixel_coords = self.hex_to_pixel(hex_coords_tuple, size, len(self.grid), "flat")
+        for coords in self.grid.keys():
+            pixel_coords = self.hex_to_pixel(coords, size, len(self.grid), "flat")
             min_x = min(min_x, pixel_coords['x'])
             min_y = min(min_y, pixel_coords['y'])
             max_x = max(max_x, pixel_coords['x'])
@@ -295,8 +294,8 @@ class Grid:
 
         draw = ImageDraw.Draw(img)
 
-        for hex_coords_tuple in self.grid.keys():
-            pixel_coords = self.hex_to_pixel(hex_coords_tuple, size, len(self.grid), "flat")
+        for coords in self.grid.keys():
+            pixel_coords = self.hex_to_pixel(coords, size, len(self.grid), "flat")
 
             # Adjust for the new image origin and margin
             pixel_coords['x'] -= min_x - margin
